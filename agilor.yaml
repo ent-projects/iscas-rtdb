@@ -1,0 +1,54 @@
+--- 
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata: 
+  name: "agilor"
+  namespace: "kube-system"
+  labels: 
+    name: "agilor"
+spec: 
+  replicas: 1
+  selector: 
+    matchLabels:
+      name: "agilor"
+  template: 
+    metadata: 
+      labels: 
+        name: "agilor"
+    spec:
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+      containers:
+      - name: "agilor"
+        image: "registry.cn-beijing.aliyuncs.com/dosproj/agilor:v0.9.1-amd64"
+        imagePullPolicy: "IfNotPresent"
+        command: 
+        - "/usr/local/agilor/bin/agilord"
+        volumeMounts: 
+        - name: "containertemplate"
+          mountPath: "/iscas/agilor"
+      volumes: 
+      - name: "containertemplate"
+        hostPath:
+          path: "/home/iscas/agilor"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agilor
+  namespace: kube-system
+  labels: 
+    name: agilor
+spec:
+  type: NodePort
+  ports:
+  - port: 3955
+    protocol: TCP
+    targetPort: 3955
+    name: agilor-port
+    nodePort: 30955
+  selector:
+    name: agilor
